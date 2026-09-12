@@ -39,7 +39,7 @@ class OjProblem[T, R](ABC):
     description_md: str = "description.md"
     inject_js_output: str = "inject.js"
     problem_file: str = "problem.py"
-    seed: int = 42
+    seed: str | None = None
 
     _manual_run: bool = False
 
@@ -164,6 +164,9 @@ console.log('题目描述路径已复制到剪贴板。')
     def __init_subclass__(cls, **kwargs):
         """如果没有手动调用操作，则自动运行生成和测试"""
         super().__init_subclass__(**kwargs)
+
+        if cls.seed is None:
+            cls.seed = cls.__name__
 
         class_file = Path(inspect.getfile(cls)).resolve()
         class_dir = class_file.parent
