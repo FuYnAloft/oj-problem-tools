@@ -4,6 +4,7 @@
 
 - [必要接口](#必要接口)
 - [内部数据模型](#内部数据模型)
+- [直接使用字符串](#直接使用字符串)
 - [Index 规划](#index-规划)
 - [生成最佳实践](#生成最佳实践)
 - [指定样例与手写 cases](#指定样例与手写-cases)
@@ -51,6 +52,35 @@ class Problem(OjProblem[InputData, Answer]):
 复杂记录优先使用 dataclass，字段使用精确且有意义的单位。例如金额使用分、身高使用毫米或十分之一厘米，而不是先用 float。把仅供生成器使用的信息与真正输入字段分开。
 
 `solve` 不应解析 `format_input` 生成的字符串；它直接读取内部模型。`solution.py` 才负责解析真实输入。两条实现路径相互独立，有助于发现格式和解析错误。
+
+## 直接使用字符串
+
+输入或输出格式简单时，不必为了形式统一额外定义包装类型：
+
+- 输入本身就是一小段固定格式文本时，可以让输入类型 `T` 直接为 `str`，并使用框架默认的 `format_input`。
+- 输出通常适合让答案类型 `R` 直接为 `str`。此时 `solve` 返回最终输出文本，使用框架默认的 `format_output`，避免把简单格式拆到另一个方法。
+- 短小、行数固定的输出优先使用 f-string，并显式包含需要的换行：
+
+```python
+class Problem(OjProblem[InputData, str]):
+    def solve(self, data: InputData, index: int) -> str:
+        answer = compute(data)
+        return f"{answer}\n"
+```
+
+- 输出行数较多、需要在分支或循环中逐步追加时，可以使用 `io.StringIO`：
+
+```python
+from io import StringIO
+
+def solve(self, data: InputData, index: int) -> str:
+    output = StringIO()
+    for item in compute_items(data):
+        output.write(f"{item}\n")
+    return output.getvalue()
+```
+
+也可以先收集字符串再用 `"\n".join(lines)`。无论采用哪种方式，都要明确处理小数格式、字段间空格和末尾换行。只有答案的内部结构需要在多处复用，或格式化逻辑明显独立时，才保留结构化 `R` 并重写 `format_output`。
 
 ## Index 规划
 

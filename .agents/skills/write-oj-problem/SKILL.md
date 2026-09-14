@@ -42,7 +42,7 @@ description: Create or complete an OpenJudge programming problem using oj_proble
 
 ### 4. 实现生成器和答案函数
 
-为结构化输入定义 dataclass 或清晰的类型。使用框架传入的 `Random`，按 `index` 安排样例、边缘、小规模随机、大规模随机和最大规模数据。让 `solve` 成为可靠、直接且尽可能使用精确运算的答案函数。
+为结构化输入定义 dataclass 或清晰的类型；格式简单时也可以直接使用 `str`。尤其可以让答案类型 `R` 为 `str`：短输出用 f-string 直接构造，多行输出可用 `io.StringIO` 累积，从而省去单独的 `format_output`。使用框架传入的 `Random`，按 `index` 安排样例、边缘、小规模随机、大规模随机和最大规模数据。让 `solve` 成为可靠、直接且尽可能使用精确运算的答案函数。
 
 通常把指定样例硬编码在 `generate` 的前几个 index。只有样例必须逐字节保持、由外部给定或不适合内部数据模型时，才手写 `cases/<index>.in` 与 `.out`；此时让 `generate_range` 排除这些 index、让 `test_range` 包含它们，并解除这些文件的 gitignore。具体规则见 `references/problem.md`。
 
