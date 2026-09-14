@@ -11,13 +11,13 @@
 
 ## 必要接口
 
-从 `oj_problem_tools` 导入 `OjProblem`，定义一个子类：
+从 `oj_problem_tools` 导入 `OjProblem`，定义一个子类。类名应使用题目名称或核心功能的 PascalCase 名称，例如 `StudentStatistics`、`SequenceSum`；不要统一命名为 `Problem`。该名称还会成为默认随机 seed。
 
 ```python
 from random import Random
 from oj_problem_tools import OjProblem
 
-class Problem(OjProblem[InputData, Answer]):
+class SequenceSum(OjProblem[InputData, Answer]):
     def generate(self, index: int, random: Random) -> InputData:
         ...
 
@@ -64,7 +64,7 @@ class Problem(OjProblem[InputData, Answer]):
 - 短小、行数固定的输出优先使用 f-string，并显式包含需要的换行：
 
 ```python
-class Problem(OjProblem[InputData, str]):
+class SequenceSum(OjProblem[InputData, str]):
     def solve(self, data: InputData, index: int) -> str:
         answer = compute(data)
         return f"{answer}\n"

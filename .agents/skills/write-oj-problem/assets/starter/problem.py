@@ -11,7 +11,7 @@ class ProblemData:
     values: tuple[int, ...]
 
 
-class Problem(OjProblem[ProblemData, str]):
+class SequenceSum(OjProblem[ProblemData, str]):
     interpreter = shutil.which("python3.8") or sys.executable
 
     def generate(self, index: int, random: Random) -> ProblemData:
