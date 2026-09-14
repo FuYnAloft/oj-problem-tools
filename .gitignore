@@ -1,8 +1,17 @@
-.idea
-.venv
+.DS_Store
 
-.local
-.tmp
+.idea/
+.vscode/
+
+.venv/
+__pycache__/
+*.py[cod]
+
+dist/
+build/
+
+.local/
+.tmp/
 
 inject.js
-cases
+cases/
