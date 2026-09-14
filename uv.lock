@@ -54,7 +54,7 @@ wheels = [
 ]
 
 [[package]]
-name = "oj-problems"
+name = "oj-problem-tools"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
