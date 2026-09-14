@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from pathlib import Path
 from random import Random
 from typing import final
@@ -29,9 +30,9 @@ def print_err(message: str):
 
 
 class OjProblem[T, R](ABC):
-    case_range: range = range(50)
-    generate_range: range = case_range
-    test_range: range = case_range
+    case_range: Sequence[int] = range(50)
+    generate_range: Sequence[int] | None = None
+    test_range: Sequence[int] | None = None
     interpreter: str = "python3.8"
     timeout_per_case: float = 1.0
     solution_script: str = "solution.py"
@@ -71,8 +72,9 @@ class OjProblem[T, R](ABC):
     def generate_all(self) -> None:
         """生成所有测试数据"""
         self.__class__._manual_run = True
+        indices = self.generate_range if self.generate_range is not None else self.case_range
         os.makedirs(self.data_dir, exist_ok=True)
-        for count, i in enumerate(self.generate_range):
+        for count, i in enumerate(indices):
             for attempt in range(100):
                 input_data = self.generate(i, Random(f"{self.seed}:generate:{i}:{attempt}"))
                 output_data = self.solve(input_data, i)
@@ -88,15 +90,16 @@ class OjProblem[T, R](ABC):
                 f.write(input_str)
             with open(f"{self.data_dir}/{i}.out", "w") as f:
                 f.write(output_str)
-            print(f"\r测试用例 {i}（{count + 1}/{len(self.generate_range)}）已生成。", end="")
+            print(f"\r测试用例 {i}（{count + 1}/{len(indices)}）已生成。", end="")
         print("\n所有测试用例均已生成。")
 
     @final
     def test_solution(self) -> None:
         """测试 solution.py 是否正确"""
         self.__class__._manual_run = True
+        indices = self.test_range if self.test_range is not None else self.case_range
         executable = shutil.which(self.interpreter) or self.interpreter
-        for count, i in enumerate(self.test_range):
+        for count, i in enumerate(indices):
             with open(f"{self.data_dir}/{i}.in", "r") as f:
                 input_str = f.read()
             with open(f"{self.data_dir}/{i}.out", "r") as f:
@@ -123,7 +126,7 @@ class OjProblem[T, R](ABC):
                 print_err(f"期望输出：\n{expected_output_str}")
                 print_err(f"实际输出：\n{actual_output_str}")
                 break
-            print(f"\r测试用例 {i}（{count + 1}/{len(self.test_range)}）已通过。", end="")
+            print(f"\r测试用例 {i}（{count + 1}/{len(indices)}）已通过。", end="")
         else:
             print("\n所有测试均已通过！")
 

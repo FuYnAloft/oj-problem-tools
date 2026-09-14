@@ -37,13 +37,15 @@ class Problem(OjProblem[InputData, Answer]):
 
 常用类属性：
 
-- `case_range = range(50)`：完整测试点集合。
-- `generate_range = case_range`：自动生成的 index。
-- `test_range = case_range`：执行标准解验证的 index。
+- `case_range: Sequence[int] = range(50)`：完整测试点集合。可使用 `range`、`list`、`tuple` 等有序整数序列，因此也能写成 `[1, 2, 3, 8, 9, 10]` 这样的离散 index。
+- `generate_range: Sequence[int] | None = None`：自动生成的 index；为 `None` 时使用 `case_range`。
+- `test_range: Sequence[int] | None = None`：执行标准解验证的 index；为 `None` 时使用 `case_range`。
 - `seed: str | None = None`：可复现随机种子；保持 `None` 时，框架会在创建子类时自动使用类名，故通常不写。若希望重命名类后仍生成完全相同的数据，则显式设置一个稳定字符串。
 - `interpreter`：运行 `solution.py` 的解释器。
 - `timeout_per_case = 1.0`：每个本地测试的超时秒数。
 - `solution_script`、`data_dir`、`description_md`、`inject_js_output`：通常保持默认；相对路径会按 `problem.py` 所在目录解析。
+
+因此，只重写 `case_range` 就会同时改变默认生成范围和默认测试范围，不需要再把它重复赋给 `generate_range`、`test_range`。空序列与 `None` 含义不同：空序列表示不处理任何 index，`None` 才表示回退到 `case_range`。
 
 定义子类后无需写 main；模块退出时框架会生成注入脚本、生成数据并测试标准解。若需要单独控制，可实例化后显式调用 `generate_all()`、`test_solution()` 或 `generate_inject_script()`。
 
@@ -121,10 +123,9 @@ def generate(self, index: int, random: Random) -> InputData:
 ```python
 case_range = range(50)
 generate_range = range(2, 50)
-test_range = case_range
 ```
 
-然后创建 `cases/0.in`、`cases/0.out`、`cases/1.in`、`cases/1.out`。自动生成不会覆盖它们，但测试会包含它们。
+然后创建 `cases/0.in`、`cases/0.out`、`cases/1.in`、`cases/1.out`。自动生成不会覆盖它们；`test_range` 保持默认的 `None`，测试时会回退到完整的 `case_range`，因此仍会包含它们。
 
 如果仓库忽略所有 cases，必须在根 `../../../../.gitignore` 中重新包含目录和指定文件。把 `<problem>` 换成实际相对路径：
 
