@@ -1,0 +1,275 @@
+body,
+div:not(.markdown-body, .markdown-body *),
+p:not(.markdown-body, .markdown-body *),
+table:not(.markdown-body, .markdown-body *),
+td:not(.markdown-body, .markdown-body *),
+th:not(.markdown-body, .markdown-body *),
+li:not(.markdown-body, .markdown-body *),
+span:not(.markdown-body, .markdown-body *) {
+    background-color: #0d1117;
+    color: #f0f6fc;
+}
+
+a {
+    color: #58a6ff !important;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: #79c0ff !important;
+}
+
+* {
+    text-shadow: none !important;
+    box-shadow: none !important;
+}
+
+/* ==== 我希望以下样式实际仅生效于非 Markdown 内容的元素 ==== */
+
+table td, table th {
+    border: 1px solid #30363d !important;
+}
+
+table thead td, table th {
+    background-color: #161b22 !important;
+    font-weight: bold;
+}
+
+/*.problem-content {*/
+/*    background-color: #1e1e1e !important;*/
+/*}*/
+/*tr.odd, tr:nth-child(odd) {*/
+/*    background-color: #262626 !important;*/
+/*}*/
+/*tr.even, tr:nth-child(even) {*/
+/*    background-color: #1e1e1e !important;*/
+/*}*/
+
+
+/* ==== 以下样式针对特定的元素，无需特别调整 ==== */
+#header, .header {
+    background-color: #0d1117 !important;
+    border-bottom: 1px solid #444 !important;
+}
+
+#footer .wrapper {
+    background: none !important;
+}
+
+input, textarea, select {
+    background-color: #0d1117 !important;
+    color: #fff !important;
+    border: 1px solid #30363d !important;
+}
+
+.sample-input, .sample-output {
+    background-color: #0d1117 !important;
+    color: #e6edf3 !important;
+    border: 1px solid #30363d !important;
+    padding: 10px;
+    display: block;
+}
+
+#headerTop {
+    background: none !important;
+}
+
+#mainNav li a {
+    background-color: #2d2d2d !important;
+    background-image: none !important;
+    color: #c9d1d9 !important;
+    border: 1px solid #444 !important;
+    border-bottom: none !important;
+    text-shadow: none !important;
+}
+
+#mainNav li.current a {
+    background-color: #1e1e1e !important;
+    color: #58a6ff !important;
+    font-weight: bold !important;
+    border-bottom: 1px solid #1e1e1e !important;
+}
+
+
+#mainNav li a:hover {
+    background-color: #383838 !important;
+    color: #fff !important;
+}
+
+
+#topMenu {
+    border-bottom: 1px solid #444 !important;
+}
+
+
+#topMenu li a {
+    background-color: #2d2d2d !important;
+    background-image: none !important;
+    color: #c9d1d9 !important;
+    border: 1px solid #444 !important;
+    text-shadow: none !important;
+}
+
+
+#topMenu li.current-show a {
+    background-color: #1e1e1e !important;
+    color: #58a6ff !important;
+    border-bottom: 1px solid #1e1e1e !important;
+    font-weight: bold;
+}
+
+
+#topMenu li a:hover {
+    background-color: #383838 !important;
+    text-decoration: none !important;
+}
+
+
+.search-form input[type="text"] {
+    background-color: #0d1117 !important;
+    color: #fff !important;
+    border: 1px solid #30363d !important;
+    box-shadow: none !important;
+}
+
+
+a.result-right, em.result-right, .result-right {
+    color: #58a6ff !important;
+
+}
+
+
+a.result-wrong, em.result-wrong, .result-wrong {
+    color: #ff7b72 !important;
+
+}
+
+
+a.result-ce, em.result-ce, .result-ce {
+    color: #008000 !important;
+
+}
+
+
+a.result-pending, em.result-pending, .result-pending {
+    color: #008000 !important;
+    font-style: italic;
+}
+
+
+.sh_keyword {
+    color: #ff7b72 !important;
+    font-weight: bold !important;
+}
+
+
+.sh_string {
+    color: #a5d6ff !important;
+}
+
+
+.sh_number {
+    color: #79c0ff !important;
+}
+
+
+.sh_function {
+    color: #d2a8ff !important;
+}
+
+
+.sh_preproc {
+    color: #ff7b72 !important;
+}
+
+
+.sh_symbol {
+    color: #e6edf3 !important;
+}
+
+
+.sh_sourceCode {
+    color: #e6edf3 !important;
+}
+
+
+.sh_comment {
+    color: #8b949e !important;
+    font-style: italic;
+}
+
+
+.sh_type {
+    color: #79c0ff !important;
+}
+
+
+/*h1, h2, h3, h4, h5, h6 {*/
+/*    color: #ffffff !important;*/
+/*    background-color: transparent !important;*/
+/*    text-shadow: none !important;*/
+/*    border-color: #444 !important;*/
+/*}*/
+.page-header, .page-title {
+    color: #ffffff !important;
+}
+
+
+input[type="submit"],
+input[type="button"],
+button[type="reset"],
+.btn,
+.status-go,
+.submit-button,
+.submit-reset,
+form:not(.search-form) button[type="submit"] {
+    background-color: #3e3e3e !important;
+    background-image: none !important;
+    color: #e6edf3 !important;
+    border: 1px solid #666 !important;
+    border-radius: 2px !important;
+    padding: 3px 12px !important;
+    cursor: pointer;
+    box-shadow: none !important;
+    text-shadow: none !important;
+}
+
+.problem-statistics h4 {
+    color: #f0f6fc;
+}
+
+
+input[type="submit"]:hover,
+input[type="button"]:hover,
+button[type="reset"]:hover,
+.btn:hover,
+.status-go:hover,
+.submit-button:hover,
+.submit-reset:hover,
+form:not(.search-form) button[type="submit"]:hover {
+    background-color: #525252 !important;
+    color: #fff !important;
+    border-color: #888 !important;
+}
+
+
+.search-form button {
+
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+
+
+    filter: invert(1) brightness(2) grayscale(100%) !important;
+
+
+    cursor: pointer;
+}
+
+
+.search-form input[type="text"] {
+    background-color: #0d1117 !important;
+    color: #fff !important;
+    border: 1px solid #30363d !important;
+}

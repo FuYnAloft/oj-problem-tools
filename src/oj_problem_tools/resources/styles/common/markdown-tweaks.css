@@ -1,0 +1,31 @@
+/* OJ 样式修复（覆盖 OpenJudge 提供的样式） */
+
+/* 确保 li 作为列表项正常渲染 marker */
+.markdown-body li {
+    display: list-item !important;
+    list-style: inherit !important;
+}
+
+/* 修正列表字体 */
+.markdown-body table {
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+/* 覆盖题目页的列表左边距 */
+.markdown-body ol li {
+    margin-left: 0 !important;
+}
+
+/* 样式适配微调（覆盖 Github 提供的样式，以符合 OpenJudge 的风格） */
+.markdown-body {
+    font-size: 15px;
+    line-height: 1.7;
+}
+.markdown-body table {
+    display: inline-block;
+    max-width: 100%;
+}
+.markdown-body pre {
+    border-radius: 6px;
+}

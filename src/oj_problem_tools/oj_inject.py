@@ -35,10 +35,10 @@ PAYLOAD_FIELDS = ("input", "output", "sampleInput", "sampleOutput")
 ALLOWED_STYLES = frozenset(
     {"none", "github", "github-tweaked", "github-tweaked-compact"}
 )
-STYLE_RESOURCES = {
-    "github": "github-markdown.css",
-    "github-tweaked": "github-markdown-tweaked.css",
-    "github-tweaked-compact": "github-markdown-tweaked-compact.css",
+MD_TWEAKS_STYLE_RESOURCES = {
+    "github": "markdown-oj-fix.css",
+    "github-tweaked": "markdown-tweaks.css",
+    "github-tweaked-compact": "markdown-tweaks-compact.css",
 }
 
 DESCRIPTION = (
@@ -449,8 +449,8 @@ def _render_markdown(source: str, config: _Config) -> tuple[str, bool]:
 
 
 @lru_cache(maxsize=None)
-def _resource_text(filename: str) -> str:
-    path = Path(__file__).resolve().parent / "resources" / filename
+def _resource_text(*segments: str | Path) -> str:
+    path = Path(__file__).resolve().parent / "resources" / Path(*segments)
     try:
         return path.read_text(encoding="utf-8")
     except OSError as error:
@@ -459,7 +459,7 @@ def _resource_text(filename: str) -> str:
 
 def _widening_css(widening: int | float) -> str:
     value = json.dumps(widening, allow_nan=False, separators=(",", ":"))
-    return f"""<style>
+    return f"""\
 :root {{
   --oj-inject-widening: {value}px;
   --oj-inject-stat-max-narrowing: 75px;
@@ -479,29 +479,34 @@ def _widening_css(widening: int | float) -> str:
 #pagebody .wrapper{{
     width: calc(960px + var(--oj-inject-wrapper-delta));
 }}
-</style>"""
+"""
 
 
-def _post_process_html(
-    raw_html: str, config: _Config, *, highlighted: bool
-) -> str:
-    syntax_style = (
-        f"<style>{_resource_text('highlight.css')}</style>" if highlighted else ""
-    )
-    if config.style == "none":
-        result = syntax_style + raw_html
-    else:
-        markdown_style = _resource_text(STYLE_RESOURCES[config.style])
-        result = (
-            f"<style>{markdown_style}</style>{syntax_style}"
-            f'<div class="markdown-body">\n{raw_html}\n</div>'
-        )
+def _post_process_html(raw_html: str, config: _Config, *, highlighted: bool) -> str:
+    return f'''\
+{_build_styles(config, highlighted=highlighted)}
+<div class="markdown-body">
+{raw_html}
+</div>'''
+
+
+def _build_styles(config: _Config, *, highlighted: bool) -> str:
+    light = dark = common = ""
+    light += _resource_text('styles', 'light', 'syntax-highlight.css') if highlighted else ""
+    dark += _resource_text('styles', 'dark', 'syntax-highlight.css') if highlighted else ""
     if config.widening != 0:
-        result = _widening_css(config.widening) + result
+        common += _widening_css(config.widening)
     if config.style != "none":
-        result = f"<style>{_resource_text('oj-dark.css')}</style>\n" + result
+        dark += _resource_text('styles', 'dark', 'oj-dark.css')
+    if config.style.startswith("github"):
+        light += _resource_text('styles', 'light', 'github-markdown.css')
+        dark += _resource_text('styles', 'dark', 'github-markdown.css')
+        common += _resource_text('styles', 'common', MD_TWEAKS_STYLE_RESOURCES[config.style])
 
-    return result
+    return f'''\
+<style class="theme-light">{light}</style>
+<style class="theme-dark" media="(prefers-color-scheme: dark)">{dark}</style>
+<style class="theme-common">{common}</style>'''
 
 
 def _compress_to_base64(text: str) -> str:
