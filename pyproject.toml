@@ -12,6 +12,7 @@ dependencies = [
     "markdown-it-py>=4.2.0",
     "mdit-py-plugins>=0.6.1",
     "pygments>=2.21.0",
+    "pyperclip>=1.11.0",
     "pyyaml>=6.0.3",
 ]
 

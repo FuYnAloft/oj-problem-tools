@@ -13,6 +13,8 @@ from pathlib import Path
 from random import Random
 from typing import final
 
+import pyperclip
+
 from .oj_inject import generate_injection_script
 
 
@@ -152,7 +154,8 @@ console.log('题目描述路径已复制到剪贴板。')
 }})();"""
         with open(self.inject_js_output, "w") as f:
             f.write(js)
-        print(f"已生成题目描述注入脚本。")
+        pyperclip.copy(js)
+        print(f"已生成题目描述注入脚本，并复制到剪贴板。")
 
     @final
     def _auto_run(self) -> None:
