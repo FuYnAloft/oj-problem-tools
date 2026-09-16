@@ -3,7 +3,7 @@ from random import Random
 from oj_problem_tools import OjProblem
 
 
-class APlusB(OjProblem[tuple[int, int], int]):
+class APlusB(OjProblem[tuple[int, int], str]):
     def generate(self, index: int, random: Random) -> tuple[int, int]:
         if index == 0:
             a, b = 1, 2
@@ -15,16 +15,13 @@ class APlusB(OjProblem[tuple[int, int], int]):
             b = random.randint(0, 1 << 32)
         return a, b
 
-    def solve(self, data: tuple[int, int], index: int) -> int | None:
+    def solve(self, data: tuple[int, int], index: int) -> str | None:
         a, b = data
         result = a + b
         if result > 1 << 32:
             return None  # 如果数据不合理或不合适，返回 None
-        return result
+        return f'{result}\n'
 
     def format_input(self, data: tuple[int, int], random: Random) -> str:
         a, b = data
         return f"{a} {b}\n"
-
-    def format_output(self, data: int) -> str:
-        return f"{data}\n"
