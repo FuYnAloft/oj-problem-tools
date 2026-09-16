@@ -78,7 +78,9 @@ LOADER = (
     "}"
     "const bytes=Uint8Array.from(atob(parts.map(part=>part.textContent).join('')),c=>c.charCodeAt(0));"
     "const html=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();"
-    "dl.innerHTML=html;"
+    "const range = document.createRange();"
+    "const fragment = range.createContextualFragment(html);"
+    "dl.replaceChildren(fragment);"
     "dl.append(...parts,source);"
     "}catch(error){"
     "const message=document.createElement('dd');"
@@ -483,11 +485,11 @@ def _widening_css(widening: int | float) -> str:
 
 
 def _post_process_html(raw_html: str, config: _Config, *, highlighted: bool) -> str:
-    return f'''\
-{_build_styles(config, highlighted=highlighted)}
-<div class="markdown-body">
-{raw_html}
-</div>'''
+    result = f'<div class="markdown-body">\n{raw_html}\n</div>'
+    result = _build_styles(config, highlighted=highlighted) + result
+    if config.style != "none":
+        result = _resource_text('elements', 'theme-toggle.html') + result
+    return result
 
 
 def _build_styles(config: _Config, *, highlighted: bool) -> str:
