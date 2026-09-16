@@ -498,6 +498,9 @@ def _post_process_html(
         )
     if config.widening != 0:
         result = _widening_css(config.widening) + result
+    if config.style != "none":
+        result = f"<style>{_resource_text('oj-dark.css')}</style>\n" + result
+
     return result
 
 
