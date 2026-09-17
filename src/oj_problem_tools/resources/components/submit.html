@@ -1,0 +1,71 @@
+<script>
+(async function fetchAndInsertSubmitMain() {
+  const style = `<style>
+  #submit {
+    margin: 0 !important;
+  }
+
+  #submit dd {
+    padding: 0 !important;
+  }
+</style>`
+
+  try {
+    // 构建目标 URL
+    const targetUrl = window.location.href.endsWith('/')
+      ? window.location.href + 'submit'
+      : window.location.href + '/submit';
+
+    // Fetch 页面 HTML
+    const response = await fetch(targetUrl);
+    if (!response.ok) throw new Error(`Fetch 失败: ${response.status}`);
+    const htmlText = await response.text();
+
+    // 使用 DOMParser 解析并提取 <div id="main">
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+    const targetMain = doc.querySelector('#main');
+
+    if (!targetMain) {
+      console.error('目标页面中未找到 <div id="main">');
+      return;
+    }
+
+    // 将 <h2>提交</h2> <style> 与 <div id="main"> 组合为可执行脚本的 DocumentFragment
+    const combinedHtml = '<h2>提交</h2>' + style + targetMain.outerHTML;
+    const range = document.createRange();
+    const fragment = range.createContextualFragment(combinedHtml);
+
+    // 删除所有的 <dt> 和 <p> 元素
+    fragment.querySelectorAll('dt').forEach(dt => dt.remove());
+    fragment.querySelectorAll('p').forEach(p => p.remove());
+
+    // 拆掉一个特定的 <dd>，这个 <dd> 导致了多余的空白行
+    const sourceInputs = fragment.querySelectorAll('dd > input[name="sourceEncode"]');
+    sourceInputs.forEach(input => {
+      // 用 input 节点直接替换包裹它的 dd 节点
+      input.parentElement.replaceWith(input);
+    });
+
+    // 调整 #main 内部结构：把 <script> 标签移动到 #main 的末尾
+    const fragmentMain = fragment.querySelector('#main');
+    if (fragmentMain) {
+      const scripts = fragmentMain.querySelectorAll('script');
+      scripts.forEach(script => {
+        fragmentMain.appendChild(script);
+      });
+    }
+
+    // 找到当前页面的 <div class="markdown-body"> 并追加到末尾
+    const markdownBody = document.querySelector('div.markdown-body');
+    if (markdownBody) {
+      markdownBody.appendChild(fragment);
+    } else {
+      console.error('当前页面未找到 <div class="markdown-body"> 节点');
+    }
+
+  } catch (error) {
+    console.error('操作失败:', error);
+  }
+})();
+</script>

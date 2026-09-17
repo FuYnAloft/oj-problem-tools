@@ -490,6 +490,7 @@ def _post_process_html(raw_html: str, config: _Config, *, highlighted: bool) -> 
     result += f'<div class="markdown-body">\n{raw_html}\n</div>'
     result += _resource_text('components', 'copy-btn.html')
     result += _resource_text('components', 'theme-toggle.html')
+    result += _resource_text('components', 'submit.html')
     return result
 
 

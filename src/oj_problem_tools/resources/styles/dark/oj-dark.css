@@ -60,7 +60,12 @@ table thead td, table th {
 input, textarea, select {
     background-color: #0d1117 !important;
     color: #fff !important;
-    border: 1px solid #30363d !important;
+    border: 1px solid #6e7681 !important;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: #8b949e !important;
+    outline: none !important;
 }
 
 .sample-input, .sample-output {
