@@ -487,7 +487,7 @@ def _widening_css(widening: int | float) -> str:
 def _post_process_html(raw_html: str, config: _Config, *, highlighted: bool) -> str:
     result = ""
     result += _build_styles(config, highlighted=highlighted)
-    result += f'<div class="markdown-body">\n{raw_html}\n</div>'
+    result += f'<div class="markdown-body"><div></div>{raw_html}</div>'
     result += _resource_text('components', 'copy-btn.html')
     result += _resource_text('components', 'theme-toggle.html')
     result += _resource_text('components', 'submit.html')
