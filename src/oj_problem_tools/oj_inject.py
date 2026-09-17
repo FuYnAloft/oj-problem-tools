@@ -488,27 +488,27 @@ def _post_process_html(raw_html: str, config: _Config, *, highlighted: bool) -> 
     result = f'<div class="markdown-body">\n{raw_html}\n</div>'
     result = _build_styles(config, highlighted=highlighted) + result
     if config.style != "none":
-        result = _resource_text('elements', 'theme-toggle.html') + result
+        result = _resource_text('components', 'theme-toggle.html') + result
     return result
 
 
 def _build_styles(config: _Config, *, highlighted: bool) -> str:
-    light = dark = common = ""
+    light = dark = tweaks = ""
     light += _resource_text('styles', 'light', 'syntax-highlight.css') if highlighted else ""
     dark += _resource_text('styles', 'dark', 'syntax-highlight.css') if highlighted else ""
     if config.widening != 0:
-        common += _widening_css(config.widening)
+        tweaks += _widening_css(config.widening)
     if config.style != "none":
         dark += _resource_text('styles', 'dark', 'oj-dark.css')
     if config.style.startswith("github"):
         light += _resource_text('styles', 'light', 'github-markdown.css')
         dark += _resource_text('styles', 'dark', 'github-markdown.css')
-        common += _resource_text('styles', 'common', MD_TWEAKS_STYLE_RESOURCES[config.style])
+        tweaks += _resource_text('styles', 'tweaks', MD_TWEAKS_STYLE_RESOURCES[config.style])
 
     return f'''\
 <style class="theme-light">{light}</style>
 <style class="theme-dark" media="(prefers-color-scheme: dark)">{dark}</style>
-<style class="theme-common">{common}</style>'''
+<style class="theme-tweaks">{tweaks}</style>'''
 
 
 def _compress_to_base64(text: str) -> str:
