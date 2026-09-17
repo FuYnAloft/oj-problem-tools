@@ -3,7 +3,7 @@
 ## 目录
 
 - [必要接口](#必要接口)
-- [内部数据模型](#内部数据模型)
+- [选择 T](#选择-t)
 - [直接使用字符串](#直接使用字符串)
 - [Index 规划](#index-规划)
 - [生成最佳实践](#生成最佳实践)
@@ -49,11 +49,37 @@ class SequenceSum(OjProblem[InputData, Answer]):
 
 定义子类后无需写 main；模块退出时框架会生成注入脚本、生成数据并测试标准解。若需要单独控制，可实例化后显式调用 `generate_all()`、`test_solution()` 或 `generate_inject_script()`。
 
-## 内部数据模型
+## 选择 T
 
-复杂记录优先使用 dataclass，字段使用精确且有意义的单位。例如金额使用分、身高使用毫米或十分之一厘米，而不是先用 float。把仅供生成器使用的信息与真正输入字段分开。
+让 `T` 表示生成器和答案函数之间最自然的数据，而不是机械复刻输入文本或一律包装成 dataclass：
 
-`solve` 不应解析 `format_input` 生成的字符串；它直接读取内部模型。`solution.py` 才负责解析真实输入。两条实现路径相互独立，有助于发现格式和解析错误。
+- 只有一个概念字段时，直接把字段类型作为 `T`。例如输入核心只有一个整数序列，就用 `OjProblem[Sequence[int], str]`，不要定义只有 `values` 一个字段的 dataclass。
+- 对按只读方式使用的同质序列，从 `collections.abc` 导入并标注为 `Sequence[元素类型]`，不要用 `tuple[元素类型, ...]` 强调具体容器。`Sequence` 更简洁，也允许生成器按自然方式返回 list 或 tuple。
+- 如果数据本来通过列表推导或逐步追加得到，就直接返回 list；不要仅为了让 `T` 看起来不可变而执行 `tuple(values)`。框架不会要求 `T` 可哈希或不可变。
+- 少量固定位置且含义一眼可见的异质值可以使用 tuple；一旦字段较多、含义需要名字、存在可选字段，或容易弄错位置，就使用 dataclass。
+- 字段使用精确且有意义的单位。例如金额使用分、身高使用毫米或十分之一厘米，而不是先用 float。
+
+`T` 可以包含不会写入输入文件的辅助信息。若答案或求解所需的中间值在生成时天然可得，而从最终输入反推较麻烦，就把它一起放进 `T`，让 `format_input` 只输出选手可见字段，让 `solve` 直接使用辅助字段。例如先随机生成完整答案、再随机挖空得到题面的构造型题目，很适合把完整答案和挖空后的输入同时放进 dataclass。
+
+```python
+@dataclass
+class PuzzleData:
+    puzzle: Sequence[int]
+    answer: Sequence[int]
+
+def generate(self, index: int, random: Random) -> PuzzleData:
+    answer = generate_complete_answer(random)
+    puzzle = remove_some_values(answer, random)
+    return PuzzleData(puzzle, answer)
+
+def solve(self, data: PuzzleData, index: int) -> str:
+    return " ".join(map(str, data.answer)) + "\n"
+
+def format_input(self, data: PuzzleData, random: Random) -> str:
+    return " ".join(map(str, data.puzzle)) + "\n"
+```
+
+`solve` 不应解析 `format_input` 生成的字符串；它直接读取 `T`。`solution.py` 才负责解析真实输入。两条实现路径相互独立，有助于发现格式和解析错误。
 
 ## 直接使用字符串
 
