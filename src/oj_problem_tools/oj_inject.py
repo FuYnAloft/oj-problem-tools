@@ -485,9 +485,11 @@ def _widening_css(widening: int | float) -> str:
 
 
 def _post_process_html(raw_html: str, config: _Config, *, highlighted: bool) -> str:
-    result = f'<div class="markdown-body">\n{raw_html}\n</div>'
-    result = _build_styles(config, highlighted=highlighted) + result
-    result = _resource_text('components', 'theme-toggle.html') + result
+    result = ""
+    result += _build_styles(config, highlighted=highlighted)
+    result += f'<div class="markdown-body">\n{raw_html}\n</div>'
+    result += _resource_text('components', 'copy-btn.html')
+    result += _resource_text('components', 'theme-toggle.html')
     return result
 
 
@@ -506,7 +508,8 @@ def _build_styles(config: _Config, *, highlighted: bool) -> str:
     return f'''\
 <style class="theme-light">{light}</style>
 <style class="theme-dark" media="(prefers-color-scheme: dark)">{dark}</style>
-<style class="theme-tweaks">{tweaks}</style>'''
+<style class="theme-tweaks">{tweaks}</style>
+'''
 
 
 def _compress_to_base64(text: str) -> str:

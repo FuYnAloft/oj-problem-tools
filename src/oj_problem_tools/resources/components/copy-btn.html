@@ -1,0 +1,180 @@
+<style>
+    /* 确保 pre 开启相对定位，供复制按钮定位 */
+    .markdown-body pre {
+        position: relative;
+    }
+
+    .copy-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        background-color: #f0f2f5;
+        border: 1px solid #4b5563;
+        border-radius: 6px;
+
+        color: #374151;
+
+        cursor: pointer;
+        outline: none;
+
+        /* 默认隐藏，鼠标移入 pre 或按钮被键盘聚焦时显示 */
+        opacity: 0;
+        transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+        z-index: 5;
+    }
+
+    .markdown-body pre:hover .copy-btn,
+    .markdown-body pre:focus-within .copy-btn,
+    .copy-btn.copied {
+        opacity: 1;
+    }
+
+    .copy-btn:hover {
+        background-color: #e5e7eb;
+        color: #111827;
+        border-color: #374151;
+    }
+
+    .copy-btn:active {
+        transform: scale(0.94);
+    }
+
+    .copy-btn svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+    }
+
+    /* 复制成功的图标切换 */
+    .copy-btn .icon-check {
+        display: none;
+    }
+
+    .copy-btn.copied {
+        color: #10b981;
+        border-color: #10b981;
+    }
+
+    .copy-btn.copied .icon-clipboard {
+        display: none;
+    }
+
+    .copy-btn.copied .icon-check {
+        display: block;
+    }
+</style>
+
+<style class="theme-dark" media="(prefers-color-scheme: dark)">
+    .copy-btn {
+        background-color: #2b2f36;
+        border-color: #434955;
+        color: #e5e7eb;
+    }
+
+    .copy-btn:hover {
+        background-color: #373d47;
+        color: #ffffff;
+        border-color: #6b7280;
+    }
+
+    .copy-btn.copied {
+        color: #34d399;
+        border-color: #34d399;
+    }
+</style>
+
+<!-- 复制按钮模板 -->
+<template id="copy-btn-template">
+    <button class="copy-btn" aria-label="复制代码" title="复制代码">
+        <!-- 剪切板图标 -->
+        <svg class="icon-clipboard" viewBox="0 0 24 24">
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+        </svg>
+        <!-- 复制成功打勾图标 -->
+        <svg class="icon-check" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+    </button>
+</template>
+
+<script>
+    (function () {
+        const template = document.getElementById('copy-btn-template');
+        if (!template) return;
+
+        // 兼容 HTTP / 非安全上下文的通用复制函数
+        function copyText(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                return navigator.clipboard.writeText(text);
+            }
+            return new Promise((resolve, reject) => {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.top = '0';
+                textArea.style.left = '-9999px';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    const successful = document.execCommand('copy');
+                    successful ? resolve() : reject(new Error('copy command failed'));
+                } catch (err) {
+                    reject(err);
+                } finally {
+                    document.body.removeChild(textArea);
+                }
+            });
+        }
+
+        const btnTemplate = template.content.querySelector('.copy-btn');
+        if (!btnTemplate) return;
+
+        const pres = document.querySelectorAll('.markdown-body pre');
+        pres.forEach((pre) => {
+            // 防重复挂载
+            if (pre.querySelector('.copy-btn')) return;
+
+            // 仅提取 button 元素节点，彻底隔离模板内的空白文本节点
+            const button = btnTemplate.cloneNode(true);
+            let resetTimer = null;
+
+            button.addEventListener('click', async () => {
+                const code = pre.querySelector('code');
+                const text = code ? code.innerText : pre.innerText;
+
+                try {
+                    await copyText(text);
+                    button.classList.add('copied');
+                    button.title = '已复制！';
+
+                    if (resetTimer) clearTimeout(resetTimer);
+                    resetTimer = setTimeout(() => {
+                        button.classList.remove('copied');
+                        button.title = '复制代码';
+                    }, 1000);
+                } catch (err) {
+                    console.error('复制失败:', err);
+                }
+            });
+
+            pre.appendChild(button);
+        });
+    })();
+</script>
