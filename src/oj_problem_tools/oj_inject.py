@@ -487,8 +487,7 @@ def _widening_css(widening: int | float) -> str:
 def _post_process_html(raw_html: str, config: _Config, *, highlighted: bool) -> str:
     result = f'<div class="markdown-body">\n{raw_html}\n</div>'
     result = _build_styles(config, highlighted=highlighted) + result
-    if config.style != "none":
-        result = _resource_text('components', 'theme-toggle.html') + result
+    result = _resource_text('components', 'theme-toggle.html') + result
     return result
 
 
@@ -498,8 +497,7 @@ def _build_styles(config: _Config, *, highlighted: bool) -> str:
     dark += _resource_text('styles', 'dark', 'syntax-highlight.css') if highlighted else ""
     if config.widening != 0:
         tweaks += _widening_css(config.widening)
-    if config.style != "none":
-        dark += _resource_text('styles', 'dark', 'oj-dark.css')
+    dark += _resource_text('styles', 'dark', 'oj-dark.css')
     if config.style.startswith("github"):
         light += _resource_text('styles', 'light', 'github-markdown.css')
         dark += _resource_text('styles', 'dark', 'github-markdown.css')
