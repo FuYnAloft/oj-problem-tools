@@ -1,0 +1,25 @@
+:root {
+    --gh-bg-color: #191a1c;
+    --gh-text-color: #d0d0d0;
+}
+
+.markdown-body {
+    background-color: var(--gh-bg-color) !important;
+    color: var(--gh-text-color) !important;
+}
+
+.markdown-body table tr {
+    background-color: var(--gh-bg-color) !important;
+}
+
+.markdown-body .csv-data .blob-num {
+    background-color: var(--gh-bg-color) !important;
+}
+
+.markdown-body table tr:nth-child(2n) {
+    background-color: #212326 !important;
+}
+
+.markdown-body pre, .markdown-body .highlight pre {
+    background-color: #212326 !important;
+}

@@ -1,3 +1,8 @@
+:root {
+    --oj-dark-bg-color: #191a1c;
+    --oj-dark-text-color: #d0d0d0;
+}
+
 body,
 div:not(.markdown-body, .markdown-body *),
 p:not(.markdown-body, .markdown-body *),
@@ -6,8 +11,8 @@ td:not(.markdown-body, .markdown-body *),
 th:not(.markdown-body, .markdown-body *),
 li:not(.markdown-body, .markdown-body *),
 span:not(.markdown-body, .markdown-body *) {
-    background-color: #0d1117;
-    color: #f0f6fc;
+    background-color: var(--oj-dark-bg-color);
+    color: var(--oj-dark-text-color);
 }
 
 a {
@@ -25,31 +30,20 @@ a:hover {
     box-shadow: none !important;
 }
 
-/* ==== 我希望以下样式实际仅生效于非 Markdown 内容的元素 ==== */
-
-table td, table th {
+table:not(.markdown-body *) td,
+table:not(.markdown-body *) th {
     border: 1px solid #30363d !important;
 }
 
-table thead td, table th {
-    background-color: #161b22 !important;
+table:not(.markdown-body *) thead td,
+table:not(.markdown-body *) th {
+    background-color: #232528 !important;
     font-weight: bold;
 }
 
-/*.problem-content {*/
-/*    background-color: #1e1e1e !important;*/
-/*}*/
-/*tr.odd, tr:nth-child(odd) {*/
-/*    background-color: #262626 !important;*/
-/*}*/
-/*tr.even, tr:nth-child(even) {*/
-/*    background-color: #1e1e1e !important;*/
-/*}*/
-
-
 /* ==== 以下样式针对特定的元素，无需特别调整 ==== */
 #header, .header {
-    background-color: #0d1117 !important;
+    background-color: var(--oj-dark-bg-color) !important;
     border-bottom: 1px solid #444 !important;
 }
 
@@ -58,7 +52,7 @@ table thead td, table th {
 }
 
 input, textarea, select {
-    background-color: #0d1117 !important;
+    background-color: var(--oj-dark-bg-color) !important;
     color: #fff !important;
     border: 1px solid #6e7681 !important;
 }
@@ -69,7 +63,7 @@ input:focus, textarea:focus, select:focus {
 }
 
 .sample-input, .sample-output {
-    background-color: #0d1117 !important;
+    background-color: var(--oj-dark-bg-color) !important;
     color: #e6edf3 !important;
     border: 1px solid #30363d !important;
     padding: 10px;
@@ -132,7 +126,7 @@ input:focus, textarea:focus, select:focus {
 
 
 .search-form input[type="text"] {
-    background-color: #0d1117 !important;
+    background-color: var(--oj-dark-bg-color) !important;
     color: #fff !important;
     border: 1px solid #30363d !important;
     box-shadow: none !important;
@@ -241,7 +235,7 @@ form:not(.search-form) button[type="submit"] {
 }
 
 .problem-statistics h4 {
-    color: #f0f6fc;
+    color: var(--oj-dark-text-color);
 }
 
 
@@ -274,7 +268,7 @@ form:not(.search-form) button[type="submit"]:hover {
 
 
 .search-form input[type="text"] {
-    background-color: #0d1117 !important;
+    background-color: var(--oj-dark-bg-color) !important;
     color: #fff !important;
     border: 1px solid #30363d !important;
 }
