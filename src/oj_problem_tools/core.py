@@ -16,7 +16,9 @@ from typing import final
 import pyperclip
 
 from .oj_inject import generate_injection_script
-
+import time
+import threading
+from pathlib import Path
 
 printed: set[str] = set()
 
@@ -101,36 +103,83 @@ class OjProblem[T, R](ABC):
         self.__class__._manual_run = True
         indices = self.test_range if self.test_range is not None else self.case_range
         executable = shutil.which(self.interpreter) or self.interpreter
-        for count, i in enumerate(indices):
-            with open(f"{self.data_dir}/{i}.in", "r") as f:
-                input_str = f.read()
-            with open(f"{self.data_dir}/{i}.out", "r") as f:
-                expected_output_str = f.read()
-            process = subprocess.Popen(
-                [executable, self.solution_script],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            try:
-                actual_output_str, stderr = process.communicate(input=input_str, timeout=self.timeout_per_case)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                print_err(f"测试用例 {i} 超时，时间限制为 {self.timeout_per_case} 秒。")
-                break
-            if process.returncode != 0:
-                print_err(f"测试用例 {i} 运行失败，返回码为 {process.returncode}。")
-                print_err(f"错误输出：\n{stderr}")
-                break
-            if actual_output_str.strip() != expected_output_str.strip():
-                print_err(f"测试用例 {i} 未通过。")
-                print_err(f"期望输出：\n{expected_output_str}")
-                print_err(f"实际输出：\n{actual_output_str}")
-                break
-            print(f"\r测试用例 {i}（{count + 1}/{len(indices)}）已通过。", end="")
-        else:
-            print("\n所有测试均已通过！")
+
+        times: list[float] = []
+
+        runner_script = str((Path(__file__).parent / "_runner.py").resolve())
+
+        # 启动单个常驻 Python 3.8 解释器子进程
+        process = subprocess.Popen(
+            [executable, runner_script, self.solution_script],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+        )
+
+        try:
+            for count, i in enumerate(indices):
+                in_file = f"{self.data_dir}/{i}.in"
+                out_file = f"{self.data_dir}/{i}.out"
+
+                with open(out_file, "r", encoding="utf-8") as f:
+                    expected_output_str = f.read()
+
+                # 发送评测请求
+                req_json = json.dumps({"in_path": in_file})
+                process.stdin.write(req_json + "\n")
+                process.stdin.flush()
+
+                # 带超时控制读取输出
+                res_line = [None]
+
+                def read_stdout():
+                    res_line[0] = process.stdout.readline()
+
+                reader_thread = threading.Thread(target=read_stdout, daemon=True)
+                reader_thread.start()
+                reader_thread.join(timeout=self.timeout_per_case)
+
+                if reader_thread.is_alive():
+                    process.kill()
+                    print_err(f"测试用例 {i} 超时，时间限制为 {self.timeout_per_case} 秒。")
+                    break
+
+                if not res_line[0]:
+                    stderr_output = process.stderr.read()
+                    print_err(f"测试用例 {i} 运行进程异常退出。")
+                    if stderr_output:
+                        print_err(f"错误输出：\n{stderr_output}")
+                    break
+
+                res = json.loads(res_line[0])
+                if not res["success"]:
+                    print_err(f"测试用例 {i} 运行失败。")
+                    print_err(f"错误输出：\n{res['error']}")
+                    break
+
+                actual_output_str = res["output"]
+                elapsed = res["time"]
+                times.append(elapsed)
+
+                if actual_output_str.strip() != expected_output_str.strip():
+                    print_err(f"测试用例 {i} 未通过。")
+                    print_err(f"期望输出：\n{expected_output_str}")
+                    print_err(f"实际输出：\n{actual_output_str}")
+                    break
+
+                print(f"\r测试用例 {i}（{count + 1}/{len(indices)}）已通过。", end="")
+            else:
+                print("\n所有测试均已通过！")
+        finally:
+            if process.poll() is None:
+                process.terminate()
+                process.wait()
+
+        if times:
+            print(f"总耗时: {sum(times):.6f} 秒")
+            print(f"最长耗时: {max(times):.6f} 秒")
 
     @final
     def generate_inject_script(self) -> None:
