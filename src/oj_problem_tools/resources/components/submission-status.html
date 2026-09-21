@@ -1,0 +1,152 @@
+<section id="oj-inject-submission-status" aria-labelledby="oj-inject-submission-status-title">
+    <h3 id="oj-inject-submission-status-title">最近的提交记录</h3>
+    <div class="oj-inject-submission-table"></div>
+</section>
+
+<style>
+    #oj-inject-submission-status {
+        margin-top: 1.5rem;
+    }
+
+    #oj-inject-submission-status table.my-solutions {
+        width: 100%;
+        margin-bottom: 0;
+    }
+
+    #oj-inject-submission-status tr.oj-inject-pending-row {
+        animation: oj-inject-pending-row-pulse 2.4s ease-in-out infinite;
+    }
+
+    #oj-inject-submission-status tr.oj-inject-pending-row > td {
+        background-color: inherit !important;
+    }
+
+    @keyframes oj-inject-pending-row-pulse {
+        0%, 100% {
+            background-color: rgba(255, 235, 59, 0);
+        }
+
+        50% {
+            background-color: rgba(255, 235, 59, 0.45);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #oj-inject-submission-status tr.oj-inject-pending-row {
+            animation: none;
+            background-color: rgba(255, 235, 59, 0.28);
+        }
+    }
+</style>
+
+<script>
+    (function initSubmissionStatus() {
+        const section = document.getElementById('oj-inject-submission-status');
+        if (!section || section.dataset.initialized === 'true') return;
+        section.dataset.initialized = 'true';
+
+        const tableHost = section.querySelector('.oj-inject-submission-table');
+        const pendingRowClass = 'oj-inject-pending-row';
+        const maximumRows = 5;
+        const pollingDelay = 1000;
+        let pollingTimer = null;
+        let inFlightRefresh = null;
+
+        function prepareTable(sourceTable) {
+            const table = sourceTable.cloneNode(true);
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            rows.slice(maximumRows).forEach(row => row.remove());
+            rows.slice(0, maximumRows).forEach(row => {
+                row.classList.toggle(
+                    pendingRowClass,
+                    Boolean(row.querySelector('a.result-pending'))
+                );
+            });
+            return table;
+        }
+
+        function replaceTable(sourceTable) {
+            if (!sourceTable) {
+                tableHost.replaceChildren();
+                return;
+            }
+
+            const nextTable = prepareTable(sourceTable);
+            const currentTable = tableHost.querySelector('table.my-solutions');
+            if (currentTable && currentTable.isEqualNode(nextTable)) return;
+
+            tableHost.replaceChildren(nextTable);
+        }
+
+        function hasPendingResult() {
+            return Boolean(tableHost.querySelector(`tr.${pendingRowClass}`));
+        }
+
+        function clearPollingTimer() {
+            if (pollingTimer === null) return;
+            clearTimeout(pollingTimer);
+            pollingTimer = null;
+        }
+
+        function schedulePolling() {
+            clearPollingTimer();
+            if (document.hidden || !hasPendingResult()) return;
+
+            pollingTimer = setTimeout(() => {
+                pollingTimer = null;
+                refreshSubmissionStatus().catch(() => {
+                    // refreshSubmissionStatus 已记录错误；保留旧表格并继续轮询。
+                });
+            }, pollingDelay);
+        }
+
+        async function fetchLatestTable() {
+            const response = await fetch(window.location.href, {cache: 'no-store'});
+            if (!response.ok) {
+                throw new Error(`Fetch 失败: ${response.status}`);
+            }
+
+            const htmlText = await response.text();
+            const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+            if (!doc.querySelector('dl.problem-content')) {
+                throw new Error('返回内容不是有效的题目描述页');
+            }
+
+            replaceTable(doc.querySelector('table.my-solutions'));
+        }
+
+        function refreshSubmissionStatus() {
+            if (inFlightRefresh) return inFlightRefresh;
+
+            clearPollingTimer();
+            inFlightRefresh = fetchLatestTable()
+                .catch(error => {
+                    console.error('刷新最近的提交记录失败:', error);
+                    throw error;
+                })
+                .finally(() => {
+                    inFlightRefresh = null;
+                    schedulePolling();
+                });
+            return inFlightRefresh;
+        }
+
+        window.ojInjectRefreshSubmissionStatus = refreshSubmissionStatus;
+
+        const initialTable = Array.from(document.querySelectorAll('table.my-solutions'))
+            .find(table => !section.contains(table));
+        replaceTable(initialTable || null);
+        schedulePolling();
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                clearPollingTimer();
+            } else if (hasPendingResult()) {
+                clearPollingTimer();
+                refreshSubmissionStatus().catch(() => {
+                    // refreshSubmissionStatus 已记录错误；后续轮询由其 finally 恢复。
+                });
+            }
+        });
+    })();
+</script>
