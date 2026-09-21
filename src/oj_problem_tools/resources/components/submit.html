@@ -10,6 +10,59 @@
   }
 </style>`
 
+  function bindSubmitForm(form) {
+    const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
+    let submitLocked = false;
+
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+
+      if (submitLocked) return;
+
+      const sourceInput = form.querySelector('[name="source"]');
+      if (!sourceInput || sourceInput.value.trim() === '') {
+        alert('source can not be empty');
+        return;
+      }
+
+      const jquery = window.jQuery;
+      if (!jquery || !jquery.fn || typeof jquery.fn.ajaxSubmit !== 'function') {
+        console.error('提交失败: jquery.form 未加载');
+        return;
+      }
+      if (!window.Base64 || typeof window.Base64.encode !== 'function') {
+        console.error('提交失败: Base64 编码器未加载');
+        return;
+      }
+
+      submitLocked = true;
+      if (submitButton) submitButton.disabled = true;
+      setTimeout(() => {
+        submitLocked = false;
+        if (submitButton) submitButton.disabled = false;
+      }, 3000);
+
+      jquery(form).ajaxSubmit({
+        beforeSubmit(formData) {
+          const sourceField = formData.find(field => field.name === 'source');
+          if (sourceField) sourceField.value = window.Base64.encode(sourceField.value);
+        },
+        success() {
+          if (typeof window.ojInjectRefreshSubmissionStatus !== 'function') {
+            console.error('提交成功，但未找到提交记录刷新函数');
+            return;
+          }
+          window.ojInjectRefreshSubmissionStatus().catch(error => {
+            console.error('提交成功，但刷新提交记录失败:', error);
+          });
+        },
+        error(_xhr, status, error) {
+          console.error('提交失败:', error || status);
+        }
+      });
+    });
+  }
+
   try {
     // 构建目标 URL
     const targetUrl = window.location.href.endsWith('/')
@@ -47,6 +100,18 @@
       input.parentElement.replaceWith(input);
     });
 
+    // 平台原脚本会在 AJAX 成功后执行 local.redirect；移除该绑定，改由本组件接管。
+    fragment.querySelectorAll('script').forEach(script => {
+      const source = script.textContent || '';
+      if (
+        source.includes('#solution_submit') &&
+        source.includes('ajaxSubmit') &&
+        source.includes('local.redirect')
+      ) {
+        script.remove();
+      }
+    });
+
     // 调整 #main 内部结构：把 <script> 标签移动到 #main 的末尾
     const fragmentMain = fragment.querySelector('#main');
     if (fragmentMain) {
@@ -56,10 +121,17 @@
       });
     }
 
+    const submitForm = fragment.querySelector('#solution_submit');
+
     // 找到当前页面的 <div class="markdown-body"> 并追加到末尾
     const markdownBody = document.querySelector('div.markdown-body');
     if (markdownBody) {
       markdownBody.appendChild(fragment);
+      if (submitForm) {
+        bindSubmitForm(submitForm);
+      } else {
+        console.error('提交页面中未找到 #solution_submit 表单');
+      }
     } else {
       console.error('当前页面未找到 <div class="markdown-body"> 节点');
     }
