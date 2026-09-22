@@ -1,23 +1,131 @@
 <script>
-(async function fetchAndInsertSubmitMain() {
+(async function fetchAndInsertSubmitForm() {
   const style = `<style>
   #submit {
+    float: none !important;
+    display: block !important;
+    width: 100% !important;
     margin: 0 !important;
   }
 
+  #solution_submit > dl {
+    margin: 0 !important;
+  }
+
+  #submit dt {
+    float: none !important;
+    width: auto !important;
+    min-height: 0 !important;
+    line-height: 1.5 !important;
+    margin: 16px 0 8px !important;
+    padding: 0 !important;
+    text-align: left !important;
+    font-style: normal !important;
+    font-weight: 600;
+  }
+
   #submit dd {
+    margin: 0 !important;
     padding: 0 !important;
   }
-</style>`
+
+  #submit .oj-language-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    margin-left: 24px;
+  }
+
+  #submit .oj-language-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  #submit .oj-language-option input[type="radio"] {
+    flex: none;
+    margin: 0;
+  }
+
+  #submit dd textarea {
+    box-sizing: border-box;
+    width: 100% !important;
+    padding: 12px;
+    resize: vertical;
+    border-radius: 6px;
+    font: 14px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+    tab-size: 4;
+  }
+
+  #submit .submit-button {
+    display: block;
+    width: 100px;
+    max-width: 100%;
+    margin: 10px auto 0 !important;
+    padding: 8px 24px !important;
+    font-weight: 600;
+  }
+
+  #submit .submit-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+</style>`;
+
+  function encodeUtf8Base64(value) {
+    const bytes = new TextEncoder().encode(value);
+    const chunkSize = 0x8000;
+    let binary = '';
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
+    }
+    return btoa(binary);
+  }
+
+  function arrangeLanguageOptions(submitRoot, ownerDocument) {
+    const radios = Array.from(
+      submitRoot.querySelectorAll('input[type="radio"][name="language"]')
+    );
+    if (!radios.length) return;
+
+    const container = radios[0].closest('dd');
+    if (!container) return;
+
+    const options = ownerDocument.createElement('div');
+    options.className = 'oj-language-options';
+
+    radios.forEach(radio => {
+      const labelParts = [];
+      let sibling = radio.nextSibling;
+      while (sibling && !(sibling.nodeType === 1 && sibling.tagName === 'BR')) {
+        const next = sibling.nextSibling;
+        labelParts.push(sibling.textContent || '');
+        sibling.remove();
+        sibling = next;
+      }
+      if (sibling && sibling.nodeType === 1 && sibling.tagName === 'BR') {
+        sibling.remove();
+      }
+
+      const label = ownerDocument.createElement('label');
+      label.className = 'oj-language-option';
+      radio.replaceWith(label);
+      label.append(radio, ownerDocument.createTextNode(labelParts.join('').trim()));
+      options.appendChild(label);
+    });
+
+    container.replaceChildren(options);
+  }
 
   function bindSubmitForm(form) {
     const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
-    let submitLocked = false;
+    let submitInFlight = false;
 
-    form.addEventListener('submit', event => {
+    form.addEventListener('submit', async event => {
       event.preventDefault();
-
-      if (submitLocked) return;
+      if (submitInFlight) return;
 
       const sourceInput = form.querySelector('[name="source"]');
       if (!sourceInput || sourceInput.value.trim() === '') {
@@ -25,119 +133,84 @@
         return;
       }
 
-      const jquery = window.jQuery;
-      if (!jquery || !jquery.fn || typeof jquery.fn.ajaxSubmit !== 'function') {
-        console.error('提交失败: jquery.form 未加载');
-        return;
-      }
-      if (!window.Base64 || typeof window.Base64.encode !== 'function') {
-        console.error('提交失败: Base64 编码器未加载');
-        return;
-      }
-
-      submitLocked = true;
+      submitInFlight = true;
       if (submitButton) submitButton.disabled = true;
-      setTimeout(() => {
-        submitLocked = false;
-        if (submitButton) submitButton.disabled = false;
-      }, 3000);
+      const minimumLock = new Promise(resolve => setTimeout(resolve, 3000));
 
-      jquery(form).ajaxSubmit({
-        beforeSubmit(formData) {
-          const sourceField = formData.find(field => field.name === 'source');
-          if (sourceField) sourceField.value = window.Base64.encode(sourceField.value);
-        },
-        success() {
-          if (typeof window.ojInjectRefreshSubmissionStatus !== 'function') {
-            console.error('提交成功，但未找到提交记录刷新函数');
-            return;
-          }
+      try {
+        const body = new URLSearchParams();
+        new FormData(form).forEach((value, name) => {
+          if (typeof value === 'string') body.append(name, value);
+        });
+        body.set('source', encodeUtf8Base64(sourceInput.value));
+
+        const response = await fetch(form.action, {
+          method: (form.method || 'POST').toUpperCase(),
+          credentials: 'same-origin',
+          body
+        });
+        if (!response.ok) throw new Error(`Fetch 失败: ${response.status}`);
+
+        if (typeof window.ojInjectRefreshSubmissionStatus === 'function') {
           window.ojInjectRefreshSubmissionStatus().catch(error => {
             console.error('提交成功，但刷新提交记录失败:', error);
           });
-        },
-        error(_xhr, status, error) {
-          console.error('提交失败:', error || status);
+        } else {
+          console.error('提交成功，但未找到提交记录刷新函数');
         }
-      });
+      } catch (error) {
+        console.error('提交失败:', error);
+      } finally {
+        await minimumLock;
+        submitInFlight = false;
+        if (submitButton) submitButton.disabled = false;
+      }
     });
   }
 
   try {
-    // 构建目标 URL
-    const targetUrl = window.location.href.endsWith('/')
-      ? window.location.href + 'submit'
-      : window.location.href + '/submit';
+    const pageUrl = new URL(window.location.href);
+    pageUrl.search = '';
+    pageUrl.hash = '';
+    pageUrl.pathname = pageUrl.pathname.replace(/\/?$/, '/submit/');
 
-    // Fetch 页面 HTML
-    const response = await fetch(targetUrl);
+    const response = await fetch(pageUrl);
     if (!response.ok) throw new Error(`Fetch 失败: ${response.status}`);
+
     const htmlText = await response.text();
+    const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+    const targetSubmit = doc.querySelector('#submit');
+    if (!targetSubmit) throw new Error('目标页面中未找到 #submit');
 
-    // 使用 DOMParser 解析并提取 <div id="main">
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-    const targetMain = doc.querySelector('#main');
+    targetSubmit.classList.remove('col-9');
+    targetSubmit.querySelectorAll('p').forEach(paragraph => paragraph.remove());
+    targetSubmit.querySelector('.submit-reset')?.remove();
+    targetSubmit.querySelectorAll('dt').forEach(term => {
+      if (!term.textContent.trim()) term.remove();
+    });
 
-    if (!targetMain) {
-      console.error('目标页面中未找到 <div id="main">');
-      return;
+    const sourceEncode = targetSubmit.querySelector('dd > input[name="sourceEncode"]');
+    const targetForm = targetSubmit.querySelector('#solution_submit');
+    if (sourceEncode && targetForm) {
+      const wrapper = sourceEncode.parentElement;
+      targetForm.prepend(sourceEncode);
+      wrapper.remove();
     }
+    arrangeLanguageOptions(targetSubmit, doc);
 
-    // 将 <h2>提交</h2> <style> 与 <div id="main"> 组合为可执行脚本的 DocumentFragment
-    const combinedHtml = '<h2>提交</h2>' + style + targetMain.outerHTML;
+    const combinedHtml = '<h2>提交</h2>' + style + targetSubmit.outerHTML;
     const range = document.createRange();
     const fragment = range.createContextualFragment(combinedHtml);
-
-    // 删除所有的 <dt> 和 <p> 元素
-    fragment.querySelectorAll('dt').forEach(dt => dt.remove());
-    fragment.querySelectorAll('p').forEach(p => p.remove());
-
-    // 拆掉一个特定的 <dd>，这个 <dd> 导致了多余的空白行
-    const sourceInputs = fragment.querySelectorAll('dd > input[name="sourceEncode"]');
-    sourceInputs.forEach(input => {
-      // 用 input 节点直接替换包裹它的 dd 节点
-      input.parentElement.replaceWith(input);
-    });
-
-    // 平台原脚本会在 AJAX 成功后执行 local.redirect；移除该绑定，改由本组件接管。
-    fragment.querySelectorAll('script').forEach(script => {
-      const source = script.textContent || '';
-      if (
-        source.includes('#solution_submit') &&
-        source.includes('ajaxSubmit') &&
-        source.includes('local.redirect')
-      ) {
-        script.remove();
-      }
-    });
-
-    // 调整 #main 内部结构：把 <script> 标签移动到 #main 的末尾
-    const fragmentMain = fragment.querySelector('#main');
-    if (fragmentMain) {
-      const scripts = fragmentMain.querySelectorAll('script');
-      scripts.forEach(script => {
-        fragmentMain.appendChild(script);
-      });
-    }
-
     const submitForm = fragment.querySelector('#solution_submit');
+    if (!submitForm) throw new Error('提交页面中未找到 #solution_submit 表单');
 
-    // 找到当前页面的 <div class="markdown-body"> 并追加到末尾
     const markdownBody = document.querySelector('div.markdown-body');
-    if (markdownBody) {
-      markdownBody.appendChild(fragment);
-      if (submitForm) {
-        bindSubmitForm(submitForm);
-      } else {
-        console.error('提交页面中未找到 #solution_submit 表单');
-      }
-    } else {
-      console.error('当前页面未找到 <div class="markdown-body"> 节点');
-    }
+    if (!markdownBody) throw new Error('当前页面未找到 div.markdown-body');
 
+    markdownBody.appendChild(fragment);
+    bindSubmitForm(submitForm);
   } catch (error) {
-    console.error('操作失败:', error);
+    console.error('加载提交控件失败:', error);
   }
 })();
 </script>
