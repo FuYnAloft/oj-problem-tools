@@ -26,6 +26,35 @@ description: Create or complete an OpenJudge programming problem using oj_proble
    - `references/problem.md`：生成器、标准答案函数和数据覆盖。
    - `references/solution-and-testing.md`：Python 3.8 标准解、解释器选择和验证。
 
+## 可选：自动上传更新题目描述
+
+使用本技能时，可以主动提示用户：项目支持在运行 `problem.py` 时自动登录 OpenJudge，并更新已经存在的题目描述。该功能是可选的；用户不启用时，保持默认的 `inject.js` 生成与剪贴板复制流程。
+
+启用自动更新需要三步，前两步必须由人类完成：
+
+1. **人类配置登录凭据。** 在项目根目录创建 `.env`，写入 OpenJudge 登录邮箱和密码：
+
+   ```dotenv
+   OJ_EMAIL=登录邮箱
+   OJ_PASSWORD=登录密码
+   ```
+
+   AI 不得读取、显示、搜索、复制或以任何方式获取 `.env` 的内容，也不得要求用户在对话中提供凭据；最多只能检测项目根目录下的 `.env` 文件是否存在。项目 `.gitignore` 已忽略 `.env`，不得将其加入版本控制。
+
+2. **人类取得目标标识。** 用户需要提供 `group_slug` 和 `problem_id`：
+   - `group_slug` 是 OpenJudge 组域名的第一段。例如 `cs101.openjudge.cn` 对应 `cs101`。
+   - `problem_id` 是整数题号。题目已经上传过时使用原题号；尚未上传时，由人类先在 OpenJudge 新建一个内容任意的占位题目，再使用新题号。本项目暂不支持直接新建题目。
+
+3. **AI 写入题目类。** 仅在用户明确提供并确认两个值后，在 `problem.py` 的 `OjProblem` 子类中添加类字段，例如：
+
+   ```python
+   class ExampleProblem(OjProblem[T, R]):
+       group_slug = "cs101"
+       problem_id = 31243
+   ```
+
+当 `group_slug` 和 `problem_id` 都已设置时，`problem.py` 的自动流程不再写入 `inject.js`，而会使用 `.env` 中的凭据直接更新该 OpenJudge 题目的描述；数据生成和标准解测试仍会继续执行。目前不支持自动上传测试样例，生成的测试样例仍需由人类手动上传。运行前必须提醒用户这会修改远程题目，并确认目标组和题号无误。任一字段未设置时，仍走原来的 `inject.js` 流程。
+
 ## 工作流
 
 ### 1. 写清规格
