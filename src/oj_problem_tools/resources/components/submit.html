@@ -212,6 +212,37 @@
     });
   }
 
+  const markdownBody = document.querySelector('div.markdown-body');
+  if (!markdownBody) {
+    console.error('加载提交控件失败: 当前页面未找到 div.markdown-body');
+    return;
+  }
+  if (document.getElementById('oj-inject-submit-slot')) return;
+
+  const heightStorageKey = 'oj-inject-submit-height';
+  let reservedHeight = 435;
+  try {
+    const cachedHeight = Number(localStorage.getItem(heightStorageKey));
+    if (Number.isFinite(cachedHeight) && cachedHeight >= 100 && cachedHeight <= 3000) {
+      reservedHeight = cachedHeight;
+    }
+  } catch {
+    // localStorage 不可用时继续使用默认高度。
+  }
+
+  const submitSlot = document.createElement('div');
+  submitSlot.id = 'oj-inject-submit-slot';
+  submitSlot.setAttribute('aria-busy', 'true');
+  submitSlot.style.height = `${reservedHeight}px`;
+
+  const submitContent = document.createElement('div');
+  submitContent.style.display = 'flow-root';
+  const submitTitle = document.createElement('h2');
+  submitTitle.textContent = '提交';
+  submitContent.appendChild(submitTitle);
+  submitSlot.appendChild(submitContent);
+  markdownBody.appendChild(submitSlot);
+
   try {
     const pageUrl = new URL(window.location.href);
     pageUrl.search = '';
@@ -242,18 +273,30 @@
     }
     arrangeLanguageOptions(targetSubmit, doc);
 
-    const combinedHtml = '<h2>提交</h2>' + style + targetSubmit.outerHTML;
+    const combinedHtml = style + targetSubmit.outerHTML;
     const range = document.createRange();
     const fragment = range.createContextualFragment(combinedHtml);
     const submitForm = fragment.querySelector('#solution_submit');
     if (!submitForm) throw new Error('提交页面中未找到 #solution_submit 表单');
 
-    const markdownBody = document.querySelector('div.markdown-body');
-    if (!markdownBody) throw new Error('当前页面未找到 div.markdown-body');
-
-    markdownBody.appendChild(fragment);
+    submitContent.appendChild(fragment);
     bindSubmitForm(submitForm);
+    submitSlot.setAttribute('aria-busy', 'false');
+
+    const renderedHeight = Math.ceil(submitContent.getBoundingClientRect().height);
+    if (renderedHeight >= 100 && renderedHeight <= 3000) {
+      submitSlot.style.height = `${renderedHeight}px`;
+      try {
+        localStorage.setItem(heightStorageKey, String(renderedHeight));
+      } catch {
+        // 无法持久化时不影响提交控件使用。
+      }
+    }
+    requestAnimationFrame(() => {
+      submitSlot.style.height = '';
+    });
   } catch (error) {
+    submitSlot.remove();
     console.error('加载提交控件失败:', error);
   }
 })();
