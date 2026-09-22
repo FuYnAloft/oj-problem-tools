@@ -185,12 +185,16 @@ class OjProblem[T, R](ABC):
             print(f"总耗时: {sum(times):.6f} 秒")
             print(f"最长耗时: {max(times):.6f} 秒")
 
+    def get_description(self) -> str:
+        """获取题目描述，可重写"""
+        with open(self.description_md, "r", encoding="utf-8") as f:
+            return f.read()
+
     @final
     def generate_inject_script(self) -> None:
         """生成 oj-inject 注入脚本"""
         self.__class__._manual_run = True
-        with open(self.description_md, "r") as f:
-            md: str = f.read()
+        md = self.get_description()
         inject = generate_injection_script(md)
         js = f"""\
 {inject}
