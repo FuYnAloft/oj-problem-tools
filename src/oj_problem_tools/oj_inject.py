@@ -608,16 +608,7 @@ def _map_clean_offset_to_original(
         return offset
     return offset + frontmatter.end - frontmatter.start
 
-
-def generate_injection_script(markdown: str) -> str:
-    """Return an OpenJudge console injection script for one Markdown problem.
-
-    A standard YAML frontmatter block belongs at the beginning of ``markdown``.
-    For compatibility, a block immediately after the title is accepted with a
-    :class:`UserWarning`.  Invalid input and OpenJudge field overflows raise
-    :class:`ValueError`.
-    """
-
+def _parse_markdown(markdown: str) -> tuple[dict[str, str], dict[str, Any]]:
     if not isinstance(markdown, str):
         raise TypeError("markdown 必须是字符串")
 
@@ -642,4 +633,28 @@ def generate_injection_script(markdown: str) -> str:
     html_payload = _compress_to_base64(final_html)
     source_payload = _compress_to_base64(stored_source)
     fields = _pack_fields(html_payload, source_payload)
-    return _generate_console_code(fields, _metadata(params, title))
+
+    return fields, _metadata(params, title)
+
+def generate_injection_script(markdown: str) -> str:
+    """Return an OpenJudge console injection script for one Markdown problem.
+
+    :class:`UserWarning`.  Invalid input and OpenJudge field overflows raise
+    :class:`ValueError`.
+    """
+
+    fields, params = _parse_markdown(markdown)
+
+    return _generate_console_code(fields, params)
+
+def generate_request_values(markdown: str) -> dict[str, Any]:
+    """Return a dictionary suitable for an OpenJudge problem update request.
+
+    :class:`UserWarning`.  Invalid input and OpenJudge field overflows raise
+    :class:`ValueError`.
+    """
+
+
+    fields, params = _parse_markdown(markdown)
+
+    return {**fields, **params}

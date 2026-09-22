@@ -13,7 +13,9 @@ dependencies = [
     "mdit-py-plugins>=0.6.1",
     "pygments>=2.21.0",
     "pyperclip>=1.11.0",
+    "python-dotenv>=1.2.3",
     "pyyaml>=6.0.3",
+    "requests>=2.34.2",
 ]
 
 [dependency-groups]

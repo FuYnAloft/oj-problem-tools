@@ -7,6 +7,8 @@ import os
 import shutil
 import subprocess
 import sys
+import threading
+import time
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path
@@ -14,11 +16,10 @@ from random import Random
 from typing import final
 
 import pyperclip
+from dotenv import load_dotenv, find_dotenv
 
-from .oj_inject import generate_injection_script
-import time
-import threading
-from pathlib import Path
+from .oj_inject import generate_injection_script, generate_request_values
+from .oj_upload import OjClient
 
 printed: set[str] = set()
 
@@ -45,6 +46,9 @@ class OjProblem[T, R](ABC):
     inject_js_output: str = "inject.js"
     problem_file: str = "problem.py"
     seed: str | None = None
+
+    group_slug: str | None = None
+    problem_id: int | None = None
 
     _manual_run: bool = False
 
@@ -207,12 +211,41 @@ console.log('题目描述路径已复制到剪贴板。')
         print(f"已生成题目描述注入脚本，并复制到剪贴板。")
 
     @final
+    def update_problem(self) -> None:
+        """更新题目描述到 OpenJudge"""
+        self.__class__._manual_run = True
+        print("正在更新题目描述到 OpenJudge。")
+        load_dotenv(find_dotenv())
+        email = os.getenv("OJ_EMAIL")
+        password = os.getenv("OJ_PASSWORD")
+        if email is None or password is None:
+            print_err("请在 .env 文件中设置 OJ_EMAIL 和 OJ_PASSWORD。")
+            return
+        if self.group_slug is None or self.problem_id is None:
+            print_err("请在子类中设置 group_slug 和 problem_id。")
+            return
+        client = OjClient()
+        try:
+            client.login(email, password)
+        except Exception as e:
+            print_err(f"登录失败：{e}")
+            return
+        with open(self.description_md, "r", encoding="utf-8") as f:
+            description = f.read()
+        values = generate_request_values(description)
+        client.update_existing_problem(self.group_slug, self.problem_id, values)
+        print(f"题目描述已更新到 OpenJudge，题目 ID: {self.problem_id}。")
+
+    @final
     def _auto_run(self) -> None:
         """自动运行生成和测试"""
         if self.__class__._manual_run:
             return
         print("自动运行：正在生成测试用例并测试标准解。")
-        self.generate_inject_script()
+        if self.group_slug is None or self.problem_id is None:
+            self.generate_inject_script()
+        else:
+            self.update_problem()
         self.generate_all()
         self.test_solution()
 
