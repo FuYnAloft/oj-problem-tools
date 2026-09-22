@@ -1,11 +1,18 @@
 <section id="oj-inject-submission-status" aria-labelledby="oj-inject-submission-status-title">
-    <h3 id="oj-inject-submission-status-title">最近的提交</h3>
+    <h3 id="oj-inject-submission-status-title">最近的提交<span class="oj-inject-auto-refresh" aria-live="polite" hidden>（自动更新）</span></h3>
     <div class="oj-inject-submission-table"></div>
 </section>
 
 <style>
     #oj-inject-submission-status {
         margin-top: 1.5rem;
+        scroll-margin-bottom: 24px;
+    }
+
+    #oj-inject-submission-status .oj-inject-auto-refresh {
+        font-size: 0.75em;
+        font-weight: 400;
+        opacity: 0.72;
     }
 
     #oj-inject-submission-status table.my-solutions {
@@ -46,6 +53,7 @@
         section.dataset.initialized = 'true';
 
         const title = section.querySelector('#oj-inject-submission-status-title');
+        const autoRefreshStatus = title.querySelector('.oj-inject-auto-refresh');
         const tableHost = section.querySelector('.oj-inject-submission-table');
         const pendingRowClass = 'oj-inject-pending-row';
         const maximumRows = 5;
@@ -69,11 +77,13 @@
         function replaceTable(sourceTable) {
             title.hidden = !sourceTable;
             if (!sourceTable) {
+                autoRefreshStatus.hidden = true;
                 tableHost.replaceChildren();
                 return;
             }
 
             const nextTable = prepareTable(sourceTable);
+            autoRefreshStatus.hidden = !nextTable.querySelector(`tr.${pendingRowClass}`);
             const currentTable = tableHost.querySelector('table.my-solutions');
             if (currentTable && currentTable.isEqualNode(nextTable)) return;
 
