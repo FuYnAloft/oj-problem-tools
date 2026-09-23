@@ -234,9 +234,8 @@ console.log('题目描述路径已复制到剪贴板。')
         except Exception as e:
             print_err(f"登录失败：{e}")
             return
-        with open(self.description_md, "r", encoding="utf-8") as f:
-            description = f.read()
-        values = generate_request_values(description)
+        md = self.get_description()
+        values = generate_request_values(md)
         client.update_existing_problem(self.group_slug, self.problem_id, values)
         print(f"题目描述已更新到 OpenJudge，题目 ID: {self.problem_id}。")
 
