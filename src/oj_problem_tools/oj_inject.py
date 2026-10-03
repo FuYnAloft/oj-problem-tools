@@ -442,7 +442,15 @@ def _render_markdown(source: str, config: _Config) -> tuple[str, bool]:
         },
     )
     parser.use(tasklists_plugin)
-    parser.use(dollarmath_plugin, renderer=_render_math)
+    parser.use(dollarmath_plugin, renderer=_render_math, double_inline=True)
+
+    def _render_math_block_as_p(tokens, idx, options, env):
+        content = tokens[idx].content
+        mathml = _render_math(content, {"display_mode": True})
+        return f'<p class="math-display" style="text-align: center;">\n{mathml}\n</p>\n'
+
+    parser.renderer.rules["math_block"] = _render_math_block_as_p
+
     return parser.render(source), highlighted
 
 
