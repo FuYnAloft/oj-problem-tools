@@ -512,6 +512,7 @@ def _build_styles(config: _Config, *, highlighted: bool) -> str:
         tweaks += _resource_text('styles', 'tweaks', MD_TWEAKS_STYLE_RESOURCES[config.style])
     if config.style.startswith("github-tweaked"):
         dark += _resource_text('styles', 'dark', 'markdown-tweaks.css')
+    tweaks += _resource_text('styles', 'tweaks', 'oj-tweaks.css')
 
     return f'''\
 <style class="theme-light">{light}</style>
