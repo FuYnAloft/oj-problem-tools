@@ -8,12 +8,11 @@ import shutil
 import subprocess
 import sys
 import threading
-import time
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path
 from random import Random
-from typing import final
+from typing import final, Self
 
 import pyperclip
 from dotenv import load_dotenv, find_dotenv
@@ -52,6 +51,10 @@ class OjProblem[T, R](ABC):
 
     _manual_run: bool = False
 
+    def __new__(cls, *args, **kwargs) -> Self:
+        cls._manual_run = True
+        return super().__new__(cls)
+
     @abstractmethod
     def generate(self, index: int, random: Random) -> T:
         """生成数据，可以带随机性"""
@@ -79,7 +82,6 @@ class OjProblem[T, R](ABC):
     @final
     def generate_all(self) -> None:
         """生成所有测试数据"""
-        self.__class__._manual_run = True
         indices = self.generate_range if self.generate_range is not None else self.case_range
         os.makedirs(self.data_dir, exist_ok=True)
         for count, i in enumerate(indices):
@@ -104,7 +106,6 @@ class OjProblem[T, R](ABC):
     @final
     def test_solution(self) -> None:
         """测试 solution.py 是否正确"""
-        self.__class__._manual_run = True
         indices = self.test_range if self.test_range is not None else self.case_range
         executable = shutil.which(self.interpreter) or self.interpreter
 
@@ -193,7 +194,6 @@ class OjProblem[T, R](ABC):
     @final
     def generate_inject_script(self) -> None:
         """生成 oj-inject 注入脚本"""
-        self.__class__._manual_run = True
         md = self.get_description()
         inject = generate_injection_script(md)
         js = f"""\
@@ -217,7 +217,6 @@ console.log('题目描述路径已复制到剪贴板。')
     @final
     def update_problem(self) -> None:
         """更新题目描述到 OpenJudge"""
-        self.__class__._manual_run = True
         print("正在更新题目描述到 OpenJudge。")
         load_dotenv(find_dotenv())
         email = os.getenv("OJ_EMAIL")
@@ -242,8 +241,6 @@ console.log('题目描述路径已复制到剪贴板。')
     @final
     def _auto_run(self) -> None:
         """自动运行生成和测试"""
-        if self.__class__._manual_run:
-            return
         print("自动运行：正在生成测试用例并测试标准解。")
         if self.group_slug is None or self.problem_id is None:
             self.generate_inject_script()
@@ -268,4 +265,6 @@ console.log('题目描述路径已复制到剪贴板。')
                 setattr(cls, attribute, str((class_dir / path).resolve()))
         setattr(cls, "problem_file", str(class_file))
 
-        atexit.register(lambda: cls()._auto_run())
+        # 仅当该子类定义在主入口模块（__main__）时才注册自动运行
+        if cls.__module__ == "__main__":
+            atexit.register(lambda: None if cls._manual_run else cls()._auto_run())
