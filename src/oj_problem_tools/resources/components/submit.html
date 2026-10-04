@@ -235,12 +235,9 @@
   submitSlot.setAttribute('aria-busy', 'true');
   submitSlot.style.height = `${reservedHeight}px`;
 
-  const submitContent = document.createElement('div');
-  submitContent.style.display = 'flow-root';
   const submitTitle = document.createElement('h2');
   submitTitle.textContent = '提交';
-  submitContent.appendChild(submitTitle);
-  submitSlot.appendChild(submitContent);
+  submitSlot.appendChild(submitTitle);
   markdownBody.appendChild(submitSlot);
 
   try {
@@ -279,11 +276,11 @@
     const submitForm = fragment.querySelector('#solution_submit');
     if (!submitForm) throw new Error('提交页面中未找到 #solution_submit 表单');
 
-    submitContent.appendChild(fragment);
+    submitSlot.appendChild(fragment);
     bindSubmitForm(submitForm);
     submitSlot.setAttribute('aria-busy', 'false');
 
-    const renderedHeight = Math.ceil(submitContent.getBoundingClientRect().height);
+    const renderedHeight = Math.ceil(submitSlot.getBoundingClientRect().height);
     if (renderedHeight >= 100 && renderedHeight <= 3000) {
       submitSlot.style.height = `${renderedHeight}px`;
       try {
