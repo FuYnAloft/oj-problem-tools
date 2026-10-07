@@ -220,7 +220,7 @@
   if (document.getElementById('oj-inject-submit-slot')) return;
 
   const heightStorageKey = 'oj-inject-submit-height';
-  let reservedHeight = 435;
+  let reservedHeight = 500;
   try {
     const cachedHeight = Number(localStorage.getItem(heightStorageKey));
     if (Number.isFinite(cachedHeight) && cachedHeight >= 100 && cachedHeight <= 3000) {
@@ -280,18 +280,18 @@
     bindSubmitForm(submitForm);
     submitSlot.setAttribute('aria-busy', 'false');
 
+    // 先清除内联固定高度，恢复真实自适应高度
+    submitSlot.style.height = '';
+
+    // 此时测量得到的就是真实内容高度
     const renderedHeight = Math.ceil(submitSlot.getBoundingClientRect().height);
     if (renderedHeight >= 100 && renderedHeight <= 3000) {
-      submitSlot.style.height = `${renderedHeight}px`;
       try {
         localStorage.setItem(heightStorageKey, String(renderedHeight));
       } catch {
         // 无法持久化时不影响提交控件使用。
       }
     }
-    requestAnimationFrame(() => {
-      submitSlot.style.height = '';
-    });
   } catch (error) {
     submitSlot.remove();
     console.error('加载提交控件失败:', error);
